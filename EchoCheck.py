@@ -1,124 +1,140 @@
-# app.py
-# To run this, you'll need to install Flask and Flask-CORS:
-# pip install Flask Flask-CORS google-search-results
-
-from flask import Flask, request, jsonify
-from flask_cors import CORS
-import serpapi
 import os
+from flask import Flask, request, jsonify
+import requests
+from flask_cors import CORS
+import json
+from serpapi import GoogleSearch # SerpApi library for Google Search
 
-# --- Configuration ---
-# IMPORTANT: Add your SerpApi API Key here.
-# You can get a free key from https://serpapi.com/
-SERPAPI_API_KEY = "1b37108e8058700ca3287a15c6b4cbaf7af3bd67104789926ebc025de3660622" 
-
-# List of reputable, top-tier news sources for the search
-REPUTABLE_SOURCES = [
-    "apnews.com", "reuters.com", "bbc.com", "nytimes.com", 
-    "wsj.com", "washingtonpost.com", "theguardian.com", "npr.org",
-    "latimes.com", "usatoday.com", "forbes.com", "bloomberg.com",
-    "cnbc.com", "theverge.com", "techcrunch.com"
-]
-
-# Keywords to help determine the stance of an article
-CONFIRM_KEYWORDS = ["confirms", "proves", "shows", "is true", "backed by", "supported by", "verified", "endorses"]
-DEBUNK_KEYWORDS = ["debunks", "false", "hoax", "myth", "untrue", "not real", "conspiracy", "misleading", "refutes", "denies", "disputes"]
-
-# --- Flask App Setup ---
 app = Flask(__name__)
-CORS(app)  # This enables Cross-Origin Resource Sharing for your frontend
+CORS(app)
 
-# --- Main Analysis Endpoint ---
-@app.route('/analyze', methods=['POST'])
-def analyze_statement():
-    data = request.get_json()
-    if not data or 'statement' not in data:
-        return jsonify({"error": "Invalid request. 'statement' is required."}), 400
+SERPAPI_API_KEY = "1b37108e8058700ca3287a15c6b4cbaf7af3bd67104789926ebc025de3660622" 
+GEMINI_API_KEY = "AIzaSyBtEfBKD4w6Hc9WPgRPkQZm-7aBrJJuBsI"
 
-    statement = data['statement']
+@app.route('/', methods=['GET'])
+def index():
+    return jsonify({'status': 'ok', 'message': 'EchoCheck RAG Server is running.'})
+
+def perform_sanity_check(statement):
+    lower_case_statement = statement.lower()
+    impossible_claims = [
+        {'keywords': ['sun', 'rises', 'west'], 'reason': 'This claim contradicts fundamental laws of astronomy.'},
+        {'keywords': ['earth', 'flat'], 'reason': 'This claim contradicts centuries of established scientific evidence.'}
+    ]
+    for claim in impossible_claims:
+        if all(kw in lower_case_statement for kw in claim['keywords']):
+            return {'passed': False, 'reason': claim['reason']}
+    return {'passed': True, 'reason': None}
+
+# --- NEW: Real-Time Google Search Function ---
+def fetch_google_search_results(query):
+    """
+    Performs a real-time Google search to get the latest information.
+    """
+    print("\nPerforming real-time Google Search...")
+    if SERPAPI_API_KEY == "YOUR_SERPAPI_API_KEY_HERE":
+        print("--> SerpApi key not set.")
+        return []
+    try:
+        params = {
+            "q": query,
+            "api_key": SERPAPI_API_KEY
+        }
+        search = GoogleSearch(params)
+        results = search.get_dict()
+        organic_results = results.get("organic_results", [])
+        print(f"--> Found {len(organic_results)} search results.")
+        return organic_results
+    except Exception as e:
+        print(f"--> FAILED to fetch Google Search results: {e}")
+        return []
+
+# --- UPDATED: Gemini AI Analysis with Grounding ---
+def get_ai_analysis(statement, search_results):
+    print("\nSending statement and search results to Gemini AI...")
+    if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
+        return {'verdict': 'API Error', 'reasoning': 'Gemini API key is not set.', 'evidence': []}
+
+    # Prepare the real-time evidence for the prompt
+    evidence_snippets = []
+    for result in search_results[:5]: # Use top 5 search results
+        snippet = f"Source: {result.get('source', 'N/A')}\nTitle: {result.get('title')}\nSnippet: {result.get('snippet', 'N/A')}\n"
+        evidence_snippets.append(snippet)
     
-    # Construct a powerful search query targeting only reputable sites
-    site_query = " OR ".join([f"site:{source}" for source in REPUTABLE_SOURCES])
-    full_query = f'"{statement}" ({site_query})'
+    evidence_text = "\n".join(evidence_snippets)
+
+    prompt = f"""
+    You are an AI fact-checker named EchoCheck. Your task is to analyze a statement based *only* on the provided real-time Google search results.
+
+    Statement to analyze: "{statement}"
+
+    Real-time Search Evidence:
+    ---
+    {evidence_text}
+    ---
+
+    Perform the following steps:
+    1.  Based *only* on the evidence provided, determine if the statement is "Confirmed", "Debunked", or "Complex/Mixed". If the evidence is insufficient, classify it as "Inconclusive".
+    2.  Write a concise, one-sentence reasoning for your verdict.
+    3.  Generate a JSON array of the top 3 most relevant pieces of evidence from the search results. Each object must have the keys "title", "source", and "snippet".
+    4.  For each of those 3 pieces of evidence, estimate its political bias as "Left-leaning", "Center", or "Right-leaning". Add this as a "bias" key.
+
+    Respond in a single, strict JSON format with three keys: "verdict" (string), "reasoning" (string), and "evidence" (JSON array of 3 objects).
+    """
+
+    gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key={GEMINI_API_KEY}"
+    headers = {'Content-Type': 'application/json'}
+    data = {"contents": [{"parts": [{"text": prompt}]}]}
 
     try:
-        # --- Search for Evidence ---
-        params = {
-            "engine": "google",
-            "q": full_query,
-            "api_key": SERPAPI_API_KEY,
-            "num": 10  # Request more results for a better consensus
-        }
-        search = serpapi.search(params)
+        response = requests.post(gemini_url, headers=headers, json=data, timeout=25)
+        response.raise_for_status()
+        result = response.json()
         
-        # --- Improved Error Handling ---
-        if "error" in search:
-            return jsonify({
-                "verdict": "API Error",
-                "reasoning": f"Could not perform search. SerpApi returned an error: {search['error']}",
-                "evidence": []
-            }), 500
+        content = result['candidates'][0]['content']['parts'][0]['text']
+        clean_json_string = content.strip().replace('```json', '').replace('```', '')
+        
+        verdict_data = json.loads(clean_json_string)
+        print(f"--> Gemini Verdict: {verdict_data.get('verdict')}")
+        
+        # Add the original URL back to the evidence for the frontend
+        for i, item in enumerate(verdict_data.get('evidence', [])):
+            if i < len(search_results):
+                item['url'] = search_results[i].get('link', '#')
 
-        organic_results = search.get("organic_results", [])
-
-        if not organic_results:
-            return jsonify({
-                "verdict": "Inconclusive",
-                "reasoning": "Could not find enough information from reputable sources to form a conclusion.",
-                "evidence": []
-            })
-
-        # --- Analyze and Tally Evidence ---
-        evidence_list = []
-        confirm_count = 0
-        debunk_count = 0
-
-        for result in organic_results:
-            title = result.get("title", "").lower()
-            snippet = result.get("snippet", "").lower()
-            text_content = f"{title} {snippet}"
-
-            is_confirming = any(keyword in text_content for keyword in CONFIRM_KEYWORDS)
-            is_debunking = any(keyword in text_content for keyword in DEBUNK_KEYWORDS)
-
-            if is_confirming and not is_debunking:
-                confirm_count += 1
-            elif is_debunking and not is_confirming:
-                debunk_count += 1
-            
-            evidence_list.append({
-                "title": result.get("title"),
-                "url": result.get("link"),
-                "source": result.get("source"),
-                "snippet": result.get("snippet"),
-                "bias": "Center" # Placeholder, a more advanced system could determine this
-            })
-
-        # --- Smarter Verdict Logic ---
-        total_evidence = len(evidence_list)
-        if debunk_count > confirm_count and debunk_count >= 2:
-            verdict = "Debunked"
-            reasoning = f"A majority of reputable sources ({debunk_count} out of {total_evidence}) appear to refute this claim."
-        elif confirm_count > debunk_count and confirm_count >= 2:
-            verdict = "Confirmed"
-            reasoning = f"A majority of reputable sources ({confirm_count} out of {total_evidence}) appear to support this claim."
-        elif confirm_count > 0 or debunk_count > 0:
-            verdict = "Complex/Mixed"
-            reasoning = "Reputable sources show mixed or conflicting reports on this topic."
-        else:
-            verdict = "Inconclusive"
-            reasoning = "While sources were found, none provided a clear confirmation or refutation of the claim."
-
-        return jsonify({
-            "verdict": verdict,
-            "reasoning": reasoning,
-            "evidence": evidence_list[:8] # Return up to 8 pieces of evidence
-        })
+        return verdict_data
 
     except Exception as e:
-        print(f"An unexpected error occurred: {e}")
-        return jsonify({"error": "An internal server error occurred."}), 500
+        print(f"--> FAILED to get verdict from Gemini: {e}")
+        return {'verdict': 'API Error', 'reasoning': 'Could not process the response from the AI model.', 'evidence': []}
 
-# --- Run the App ---
+
+@app.route('/analyze', methods=['POST'])
+def analyze_claim():
+    data = request.get_json()
+    if not data or 'statement' not in data:
+        return jsonify({'error': 'Invalid request. "statement" key is required.'}), 400
+
+    statement = data['statement'].strip()
+    print(f"\n\n--- New Request Received ---\nQuery: {statement}")
+
+    sanity_check = perform_sanity_check(statement)
+    if not sanity_check['passed']:
+        print("--> Sanity check failed.")
+        return jsonify({'verdict': 'Fundamentally False', 'reasoning': sanity_check['reason'], 'evidence': []})
+    
+    print("--> Sanity check passed. Fetching real-time search results...")
+    
+    # NEW: Call Google Search first
+    search_results = fetch_google_search_results(statement)
+    
+    if not search_results:
+        return jsonify({'verdict': 'Inconclusive', 'reasoning': 'Could not find any relevant information in a real-time search.', 'evidence': []}), 200
+
+    # Send search results to Gemini for analysis
+    result = get_ai_analysis(statement, search_results)
+    
+    return jsonify(result)
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)
