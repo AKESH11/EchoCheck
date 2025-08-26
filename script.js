@@ -1,15 +1,16 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Firebase Configuration ---
-    const firebaseConfig = {
-    apiKey: "AIzaSyA1MLXpyxJ9Hnhzdo0EE-7RnhxTj58hYCk",
-    authDomain: "echocheck-ea0b2.firebaseapp.com",
-    databaseURL: "https://echocheck-ea0b2-default-rtdb.asia-southeast1.firebasedatabase.app",
-    projectId: "echocheck-ea0b2",
-    storageBucket: "echocheck-ea0b2.firebasestorage.app",
-    messagingSenderId: "556400987286",
-    appId: "1:556400987286:web:7d646a651ea7af13c046b7",
-    measurementId: "G-TZ8Z1GS8CN"
-    };
+    // IMPORTANT: Replace with your own Firebase project configuration
+   const firebaseConfig = {
+  apiKey: "AIzaSyA1MLXpyxJ9Hnhzdo0EE-7RnhxTj58hYCk",
+  authDomain: "echocheck-ea0b2.firebaseapp.com",
+  databaseURL: "https://echocheck-ea0b2-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "echocheck-ea0b2",
+  storageBucket: "echocheck-ea0b2.firebasestorage.app",
+  messagingSenderId: "556400987286",
+  appId: "1:556400987286:web:7d646a651ea7af13c046b7",
+  measurementId: "G-TZ8Z1GS8CN"
+};
 
     // Initialize Firebase
     firebase.initializeApp(firebaseConfig);
@@ -141,7 +142,11 @@ document.addEventListener('DOMContentLoaded', () => {
         displayTypingIndicator();
 
         try {
-            // --- UPDATED: More realistic simulated response ---
+            // This is a placeholder for your backend call
+            // const response = await fetch(BACKEND_URL, { ... });
+            // const result = await response.json();
+            
+            // For the demo, we'll use a realistic simulated response
             await new Promise(resolve => setTimeout(resolve, 2500)); 
             
             const allMockEvidence = [
@@ -155,12 +160,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 { title: "Exclusive: Leaked Documents Contradict Official Story", source: "The Intercept", bias: "Left-leaning", url: "#" }
             ];
 
-            // Shuffle and select a random number of evidence items (3 to 5)
             const shuffledEvidence = allMockEvidence.sort(() => 0.5 - Math.random());
-            const evidenceCount = Math.floor(Math.random() * 3) + 3; // 3, 4, or 5
+            const evidenceCount = Math.floor(Math.random() * 3) + 3;
             const selectedEvidence = shuffledEvidence.slice(0, evidenceCount);
 
-            // Simulate a verdict based on the selected evidence
             let confirmCount = Math.floor(Math.random() * (selectedEvidence.length + 1));
             let debunkCount = selectedEvidence.length - confirmCount;
             let verdict = "Complex/Mixed";
@@ -214,15 +217,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- History Display Logic ---
     async function deleteHistoryItem(chatId) {
         const user = auth.currentUser;
-        if (!user) {
-            console.error("No user logged in to delete history.");
-            return;
-        }
+        if (!user) return;
         try {
             await db.collection('users').doc(user.uid).collection('chats').doc(chatId).delete();
             if (currentChatId === chatId) {
-                chatContainer.innerHTML = `<div class="text-center text-gray-400 mt-8">Ask a question to start a new chat.</div>`;
-                currentChatId = null;
+                newChatBtn.click();
             }
         } catch (error) {
             console.error("Error deleting history item:", error);
@@ -254,8 +253,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const verdictIconContainer = createDOMElement('div', 'flex-shrink-0');
             verdictIconContainer.innerHTML = getVerdictUI(conv.result.verdict, 'w-5 h-5').icon;
             
-            contentWrapper.appendChild(statementSpan);
             contentWrapper.appendChild(verdictIconContainer);
+            contentWrapper.appendChild(statementSpan);
             
             const deleteBtn = createDOMElement('button', 'delete-history-btn p-1 rounded-full hover:bg-red-100');
             deleteBtn.innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-500 hover:text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>`;

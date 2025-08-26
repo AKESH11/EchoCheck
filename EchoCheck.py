@@ -1,12 +1,20 @@
+# EchoCheck - Python Backend with Real-Time Google Search & Gemini AI
+# This version uses Google Search to ground the AI for maximum accuracy.
+# To run this:
+# 1. Install required libraries: pip install Flask requests flask-cors google-search-results
+# 2. Get your API keys from SerpApi.com and aistudio.google.com.
+# 3. Paste your keys into the variables below.
+# 4. Run the script: python your_file_name.py
+
 import os
 from flask import Flask, request, jsonify
 import requests
 from flask_cors import CORS
 import json
-from serpapi import GoogleSearch # SerpApi library for Google Search
-
+from serpapi import GoogleSearch 
 app = Flask(__name__)
 CORS(app)
+
 
 SERPAPI_API_KEY = "1b37108e8058700ca3287a15c6b4cbaf7af3bd67104789926ebc025de3660622" 
 GEMINI_API_KEY = "AIzaSyBtEfBKD4w6Hc9WPgRPkQZm-7aBrJJuBsI"
@@ -63,8 +71,9 @@ def get_ai_analysis(statement, search_results):
     
     evidence_text = "\n".join(evidence_snippets)
 
+    # UPDATED: More forceful prompt to prioritize real-time evidence
     prompt = f"""
-    You are an AI fact-checker named EchoCheck. Your task is to analyze a statement based *only* on the provided real-time Google search results.
+    You are an AI fact-checker named EchoCheck. Your primary directive is to determine the validity of a statement based *exclusively* on the real-time search evidence provided. You MUST prioritize this evidence over your own internal knowledge.
 
     Statement to analyze: "{statement}"
 
@@ -74,8 +83,8 @@ def get_ai_analysis(statement, search_results):
     ---
 
     Perform the following steps:
-    1.  Based *only* on the evidence provided, determine if the statement is "Confirmed", "Debunked", or "Complex/Mixed". If the evidence is insufficient, classify it as "Inconclusive".
-    2.  Write a concise, one-sentence reasoning for your verdict.
+    1.  Based *only* on the evidence provided, determine if the statement is "Confirmed", "Debunked", or "Complex/Mixed". If the evidence is insufficient or does not directly address the claim, classify it as "Inconclusive".
+    2.  Write a concise, one-sentence reasoning for your verdict that directly references the provided evidence.
     3.  Generate a JSON array of the top 3 most relevant pieces of evidence from the search results. Each object must have the keys "title", "source", and "snippet".
     4.  For each of those 3 pieces of evidence, estimate its political bias as "Left-leaning", "Center", or "Right-leaning". Add this as a "bias" key.
 

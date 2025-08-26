@@ -59,7 +59,7 @@ body::after {
 }
 
 .history-item:hover { 
-    background-color: rgba(255, 255, 255, 0.5);
+    background-color: rgba(255, 255, 255, 0.05);
     border-left-color: #6ee7b7; /* Emerald 300 */
     transform: translateX(3px);
 }
