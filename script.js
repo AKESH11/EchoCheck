@@ -1,7 +1,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Firebase Configuration ---
     // IMPORTANT: Replace with your own Firebase project configuration
-   const firebaseConfig = {
+    const firebaseConfig = {
   apiKey: "AIzaSyA1MLXpyxJ9Hnhzdo0EE-7RnhxTj58hYCk",
   authDomain: "echocheck-ea0b2.firebaseapp.com",
   databaseURL: "https://echocheck-ea0b2-default-rtdb.asia-southeast1.firebasedatabase.app",
@@ -35,6 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInitial = document.getElementById('user-initial');
     const userEmail = document.getElementById('user-email');
 
+    // The URL where your Python Flask backend is running
+    const BACKEND_URL = 'http://127.0.0.1:5000/analyze';
     let currentChatId = null;
     let historyUnsubscribe = null;
 
@@ -142,46 +144,18 @@ document.addEventListener('DOMContentLoaded', () => {
         displayTypingIndicator();
 
         try {
-            // This is a placeholder for your backend call
-            // const response = await fetch(BACKEND_URL, { ... });
-            // const result = await response.json();
-            
-            // For the demo, we'll use a realistic simulated response
-            await new Promise(resolve => setTimeout(resolve, 2500)); 
-            
-            const allMockEvidence = [
-                { title: "Official Report Confirms New Discovery", source: "Associated Press", bias: "Center", url: "#" },
-                { title: "Study Published in Science Journal Backs Claim", source: "Science Daily", bias: "Center", url: "#" },
-                { title: "Fact Check: Is the Viral Claim True?", source: "Reuters", bias: "Center", url: "#" },
-                { title: "Experts Weigh In On Recent Announcement", source: "The Guardian", bias: "Left-leaning", url: "#" },
-                { title: "New Data Challenges Previous Assumptions", source: "The New York Times", bias: "Left-leaning", url: "#" },
-                { title: "Investigation Reveals Inconsistencies in Report", source: "The Wall Street Journal", bias: "Center", url: "#" },
-                { title: "Why the Recent News Might Be Misleading", source: "Forbes", bias: "Right-leaning", url: "#" },
-                { title: "Exclusive: Leaked Documents Contradict Official Story", source: "The Intercept", bias: "Left-leaning", url: "#" }
-            ];
+            // --- UPDATED: Live call to the Python backend ---
+            const response = await fetch(BACKEND_URL, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ statement: statement })
+            });
 
-            const shuffledEvidence = allMockEvidence.sort(() => 0.5 - Math.random());
-            const evidenceCount = Math.floor(Math.random() * 3) + 3;
-            const selectedEvidence = shuffledEvidence.slice(0, evidenceCount);
-
-            let confirmCount = Math.floor(Math.random() * (selectedEvidence.length + 1));
-            let debunkCount = selectedEvidence.length - confirmCount;
-            let verdict = "Complex/Mixed";
-            let reasoning = "Reputable sources show mixed reports on this topic.";
-
-            if (confirmCount > debunkCount + 1) {
-                verdict = "Confirmed";
-                reasoning = `A majority of sources (${confirmCount} of ${evidenceCount}) appear to support this claim.`
-            } else if (debunkCount > confirmCount + 1) {
-                verdict = "Debunked";
-                reasoning = `A majority of sources (${debunkCount} of ${evidenceCount}) appear to refute this claim.`
+            if (!response.ok) {
+                throw new Error(`Network response was not ok: ${response.statusText}`);
             }
 
-            const result = {
-                verdict: verdict,
-                reasoning: reasoning,
-                evidence: selectedEvidence
-            };
+            const result = await response.json();
             
             removeTypingIndicator();
             displayAIMessage(result, statement);
@@ -196,9 +170,9 @@ document.addEventListener('DOMContentLoaded', () => {
             });
 
         } catch (error) {
-            console.error("Error saving to Firestore:", error);
+            console.error("Error during analysis:", error);
             removeTypingIndicator();
-            displayAIMessage({ verdict: 'Database Error', reasoning: 'Could not save the chat to your history.', evidence: [] }, statement);
+            displayAIMessage({ verdict: 'Connection Error', reasoning: 'Could not connect to the analysis server. Please ensure the Python backend is running.', evidence: [] }, statement);
         }
     }
 
