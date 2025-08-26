@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EchoCheck - AI Verification Chat</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="text-gray-800 antialiased">
+
+    <!-- Main Auth Screen -->
+    <div id="auth-screen" class="flex items-center justify-center h-screen p-4">
+        <!-- UPDATED: Removed container styles (background, border, shadow, etc.) and updated text colors -->
+        <div class="text-center max-w-md w-full animate-slide-in-up">
+            <img src="./EchoCheck.png" alt="EchoCheck Logo" class="h-28 w-18 mx-auto animate-subtle-float" style="animation-delay: 0.2s;">
+            <h1 class="text-5xl font-extrabold text-white mt-6" style="animation-delay: 0.3s;">Welcome to EchoCheck</h1>
+            <p class="text-slate-200 mt-2" style="animation-delay: 0.4s;">Your AI-powered partner in truth verification.</p>
+            <div class="mt-8 space-y-4" style="animation-delay: 0.5s;">
+                <button id="show-login-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-xl transition-all transform hover:scale-105 shadow-lg shadow-indigo-500/30 focus:outline-none focus:ring-4 focus:ring-indigo-300">
+                    Login
+                </button>
+                <button id="show-signup-btn" class="w-full bg-gray-200 hover:bg-gray-300 text-slate-800 font-bold py-3 px-4 rounded-xl transition-all transform hover:scale-105 focus:outline-none focus:ring-4 focus:ring-gray-300">
+                    Sign Up
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Login Modal -->
+    <div id="login-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 modal-backdrop z-50">
+        <div class="modal-content bg-gray-100 rounded-2xl shadow-xl w-full max-w-sm p-8">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Login to EchoCheck</h2>
+            <input type="email" id="login-email" placeholder="Email" class="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white">
+            <input type="password" id="login-password" placeholder="Password" class="w-full border border-gray-300 rounded-lg p-3 mb-6 focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white">
+            <p id="login-error" class="text-red-500 text-sm mb-4 text-center hidden"></p>
+            <button id="login-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition">Login</button>
+            <button class="close-modal-btn w-full mt-4 text-sm text-center text-gray-500 hover:underline">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Signup Modal -->
+    <div id="signup-modal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 modal-backdrop z-50">
+        <div class="modal-content bg-gray-100 rounded-2xl shadow-xl w-full max-w-sm p-8">
+            <h2 class="text-2xl font-bold text-slate-800 mb-6 text-center">Create Account</h2>
+            <input type="email" id="signup-email" placeholder="Email" class="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white">
+            <input type="password" id="signup-password" placeholder="Password" class="w-full border border-gray-300 rounded-lg p-3 mb-4 focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white">
+            <input type="password" id="signup-confirm-password" placeholder="Confirm Password" class="w-full border border-gray-300 rounded-lg p-3 mb-6 focus:ring-2 focus:ring-indigo-500 outline-none transition bg-white">
+            <p id="signup-error" class="text-red-500 text-sm mb-4 text-center hidden"></p>
+            <button id="signup-btn" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 rounded-lg transition">Sign Up</button>
+            <button class="close-modal-btn w-full mt-4 text-sm text-center text-gray-500 hover:underline">Cancel</button>
+        </div>
+    </div>
+
+    <!-- Main Chat UI (Initially Hidden) -->
+    <div id="chat-ui" class="hidden h-screen w-screen flex p-4 gap-4 animate-slide-in-up">
+        
+        <!-- Left Panel: History -->
+        <div class="w-1/3 md:w-1/4 bg-gray-100/70 backdrop-blur-xl border border-gray-300 flex flex-col rounded-2xl shadow-lg overflow-hidden">
+            <div class="p-4 border-b border-gray-300 flex justify-between items-center flex-shrink-0">
+                <h2 class="text-xl font-bold text-slate-800">History</h2>
+                <button id="new-chat-btn" class="text-sm font-semibold text-indigo-600 hover:text-indigo-800 transition">New Chat</button>
+            </div>
+            <div id="history-list" class="flex-grow overflow-y-auto p-2 space-y-1">
+                <!-- History items will be populated by JS -->
+            </div>
+            <div class="p-4 border-t border-gray-300 flex-shrink-0">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-indigo-200 rounded-full flex items-center justify-center font-bold text-indigo-700" id="user-initial">U</div>
+                    <div>
+                        <p class="font-semibold text-sm text-slate-800" id="user-email">user@example.com</p>
+                        <a href="#" id="logout-btn" class="text-xs text-slate-500 hover:underline">Logout</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel: Chat -->
+        <div class="w-2/3 md:w-3/4 flex flex-col bg-gray-100/70 backdrop-blur-xl border border-gray-300 rounded-2xl shadow-lg overflow-hidden">
+            <div id="chat-container" class="flex-grow p-6 overflow-y-auto bg-gray-200/50">
+                <!-- Chat messages will be populated by JS -->
+            </div>
+            <div class="p-4 bg-transparent border-t border-gray-300/80">
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3">
+                        <svg class="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                    </span>
+                    <input type="text" id="chat-input" class="w-full bg-white border border-gray-300 rounded-lg p-3 pl-10 pr-24 outline-none focus:ring-2 focus:ring-indigo-500 transition" placeholder="Ask EchoCheck to verify a statement...">
+                    <button id="send-btn" class="absolute inset-y-0 right-0 flex items-center justify-center bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 m-1.5 rounded-lg transition-all transform hover:scale-105">Send</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Firebase SDKs -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="script.js"></script>
+</body>
+</html>
