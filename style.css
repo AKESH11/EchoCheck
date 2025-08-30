@@ -1,9 +1,8 @@
-/* --- New Animated Green Aurora Background --- */
 body {
     font-family: 'Manrope', sans-serif;
     color: #1e293b;
-    background-color: #011a14; /* Dark Teal base */
-    overflow: hidden; /* Prevent scrollbars from the pseudo-elements */
+    background-color: #011a14; 
+    overflow: hidden; 
     position: relative;
 }
 
@@ -46,32 +45,31 @@ body::after {
 }
 
 
-/* --- General Styles --- */
+
 .chat-bubble-user { 
-    background-color: #059669; /* Emerald 600 */
+    background-color: #059669; 
     color: #ffffff; 
 }
 
 .history-item {
     transition: all 0.2s ease-in-out;
     border-left: 3px solid transparent;
-    position: relative; /* Needed for positioning the delete button */
+    position: relative; 
 }
 
 .history-item:hover { 
     background-color: rgba(255, 255, 255, 0.05);
-    border-left-color: #6ee7b7; /* Emerald 300 */
+    border-left-color: #6ee7b7; 
     transform: translateX(3px);
 }
 
 .history-item.active { 
-    background-color: #d1fae5; /* Emerald 100 */
-    border-left-color: #059669; /* Emerald 600 */
-    color: #047857; /* Emerald 700 */
+    background-color: #d1fae5;
+    border-left-color: #059669; 
+    color: #047857;
     font-weight: 600;
 }
 
-/* --- New Delete Button Styles --- */
 .delete-history-btn {
     opacity: 0;
     transition: opacity 0.2s ease-in-out;
@@ -115,9 +113,8 @@ body::after {
 .animate-subtle-float { animation: subtleFloat 6s ease-in-out infinite; }
 .chat-bubble { animation: slideInUp 0.4s ease-out forwards; }
 
-/* Updated Card Styles for Blurry/Glass Effect */
 .analyst-card, .bg-gray-100\/70, .modal-content {
-    background: rgba(255, 255, 255, 0.65) !important; /* Semi-transparent white */
+    background: rgba(255, 255, 255, 0.65) !important;
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.2);
@@ -136,7 +133,7 @@ body::after {
 }
 
 .evidence-snippet:hover {
-    border-color: #059669; /* Emerald 600 */
+    border-color: #059669; 
     background-color: rgba(5, 150, 105, 0.05);
     transform: translateY(-2px);
 }
@@ -150,5 +147,5 @@ body::after {
 
 @keyframes blink {
     0%, 80%, 100% { background-color: #cbd5e1; }
-    40% { background-color: #059669; } /* Emerald 600 */
+    40% { background-color: #059669; } 
 }

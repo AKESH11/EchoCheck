@@ -1,11 +1,3 @@
-# EchoCheck - Python Backend with Real-Time Google Search & Gemini AI
-# This version uses Google Search to ground the AI for maximum accuracy.
-# To run this:
-# 1. Install required libraries: pip install Flask requests flask-cors google-search-results
-# 2. Get your API keys from SerpApi.com and aistudio.google.com.
-# 3. Paste your keys into the variables below.
-# 4. Run the script: python your_file_name.py
-
 import os
 from flask import Flask, request, jsonify
 import requests
@@ -34,7 +26,6 @@ def perform_sanity_check(statement):
             return {'passed': False, 'reason': claim['reason']}
     return {'passed': True, 'reason': None}
 
-# --- NEW: Real-Time Google Search Function ---
 def fetch_google_search_results(query):
     """
     Performs a real-time Google search to get the latest information.
@@ -57,21 +48,18 @@ def fetch_google_search_results(query):
         print(f"--> FAILED to fetch Google Search results: {e}")
         return []
 
-# --- UPDATED: Gemini AI Analysis with Grounding ---
 def get_ai_analysis(statement, search_results):
     print("\nSending statement and search results to Gemini AI...")
     if GEMINI_API_KEY == "YOUR_GEMINI_API_KEY_HERE":
         return {'verdict': 'API Error', 'reasoning': 'Gemini API key is not set.', 'evidence': []}
 
-    # Prepare the real-time evidence for the prompt
     evidence_snippets = []
-    for result in search_results[:5]: # Use top 5 search results
+    for result in search_results[:5]:
         snippet = f"Source: {result.get('source', 'N/A')}\nTitle: {result.get('title')}\nSnippet: {result.get('snippet', 'N/A')}\n"
         evidence_snippets.append(snippet)
     
     evidence_text = "\n".join(evidence_snippets)
 
-    # UPDATED: More forceful prompt to prioritize real-time evidence
     prompt = f"""
     You are an AI fact-checker named EchoCheck. Your primary directive is to determine the validity of a statement based *exclusively* on the real-time search evidence provided. You MUST prioritize this evidence over your own internal knowledge.
 
@@ -106,7 +94,6 @@ def get_ai_analysis(statement, search_results):
         verdict_data = json.loads(clean_json_string)
         print(f"--> Gemini Verdict: {verdict_data.get('verdict')}")
         
-        # Add the original URL back to the evidence for the frontend
         for i, item in enumerate(verdict_data.get('evidence', [])):
             if i < len(search_results):
                 item['url'] = search_results[i].get('link', '#')
@@ -134,13 +121,11 @@ def analyze_claim():
     
     print("--> Sanity check passed. Fetching real-time search results...")
     
-    # NEW: Call Google Search first
     search_results = fetch_google_search_results(statement)
     
     if not search_results:
         return jsonify({'verdict': 'Inconclusive', 'reasoning': 'Could not find any relevant information in a real-time search.', 'evidence': []}), 200
 
-    # Send search results to Gemini for analysis
     result = get_ai_analysis(statement, search_results)
     
     return jsonify(result)

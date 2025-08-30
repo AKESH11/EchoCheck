@@ -35,7 +35,6 @@ document.addEventListener('DOMContentLoaded', () => {
     const userInitial = document.getElementById('user-initial');
     const userEmail = document.getElementById('user-email');
 
-    // The URL where your Python Flask backend is running
     const BACKEND_URL = 'http://127.0.0.1:5000/analyze';
     let currentChatId = null;
     let historyUnsubscribe = null;
@@ -144,7 +143,6 @@ document.addEventListener('DOMContentLoaded', () => {
         displayTypingIndicator();
 
         try {
-            // --- UPDATED: Live call to the Python backend ---
             const response = await fetch(BACKEND_URL, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
