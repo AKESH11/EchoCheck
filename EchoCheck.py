@@ -11,6 +11,7 @@ CORS(app)
 SERPAPI_API_KEY = os.environ.get("SERPAPI_API_KEY", "1b37108e8058700ca3287a15c6b4cbaf7af3bd67104789926ebc025de3660622")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY", "AIzaSyCwHGag6Gu2dlFlLWPUCuWqKSPKJKlutpY")
 
+
 @app.route('/', methods=['GET'])
 def index():
     return jsonify({'status': 'ok', 'message': 'EchoCheck RAG Server is running.'})
